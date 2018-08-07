@@ -26,45 +26,55 @@
 #include <platform.h>
 #include <alloc.h>
 
-static void *CheckResult(void *ptr, const char *fn, bool check_result)
-{
-    if ((ptr == NULL) && (check_result))
-    {
-        fputs(fn, stderr);
-        fputs("CRITICAL: Unable to allocate memory\n", stderr);
-        exit(255);
-    }
-    return ptr;
-}
+#define CheckResult(ptr, check_result)                          \
+    if (((ptr) == NULL) && (check_result))                      \
+    {                                                           \
+        fputs(__func__, stderr);                                \
+        fputs("CRITICAL: Unable to allocate memory\n", stderr); \
+        exit(255);                                              \
+    }                                                           \
+
 
 void *xmalloc(size_t size)
 {
-    return CheckResult(malloc(size), "xmalloc", size != 0);
+    void *ptr = malloc(size);
+    CheckResult(ptr, size != 0);
+    return ptr;
 }
 
 void *xcalloc(size_t nmemb, size_t size)
 {
-    return CheckResult(calloc(nmemb, size), "xcalloc", (nmemb != 0) && (size != 0));
+    void *ptr = calloc(nmemb, size);
+    CheckResult(ptr, (nmemb != 0) && (size != 0));
+    return ptr;
 }
 
-void *xrealloc(void *ptr, size_t size)
+void *xrealloc(void *orig_ptr, size_t size)
 {
-    return CheckResult(realloc(ptr, size), "xrealloc", size != 0);
+    void *ptr = realloc(orig_ptr, size);
+    CheckResult(ptr, size != 0);
+    return ptr;
 }
 
 char *xstrdup(const char *str)
 {
-    return CheckResult(strdup(str), "xstrdup", true);
+    void *ptr = strdup(str);
+    CheckResult(ptr, true);
+    return ptr;
 }
 
 char *xstrndup(const char *str, size_t n)
 {
-    return CheckResult(strndup(str, n), "xstrndup", true);
+    void *ptr = strndup(str, n);
+    CheckResult(ptr, true);
+    return ptr;
 }
 
 void *xmemdup(const void *data, size_t size)
 {
-    return CheckResult(memdup(data, size), "xmemdup", size != 0);
+    void *ptr = memdup(data, size);
+    CheckResult(ptr, size != 0);
+    return ptr;
 }
 
 int xasprintf(char **strp, const char *fmt, ...)
@@ -82,6 +92,6 @@ int xvasprintf(char **strp, const char *fmt, va_list ap)
 {
     int res = vasprintf(strp, fmt, ap);
 
-    CheckResult(res == -1 ? NULL : *strp, "xvasprintf", true);
+    CheckResult(res == -1 ? NULL : *strp, true);
     return res;
 }

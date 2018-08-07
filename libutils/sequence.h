@@ -51,10 +51,16 @@ typedef struct
     void (*ItemDestroy) (void *item);
 } Seq;
 
-static inline void *SeqAt(const Seq *seq, int i)
-{
-    return seq->data[i];
-}
+
+/**
+  @brief Get item from the sequence
+  @note On NULL sequence return size 0.
+  @param seq [in] sequence.
+  @param i  [in] index
+  @return Item from the sequence at the specified index
+  */
+#define SeqAt(seq, i) (seq->data[i])
+
 
 /**
   @brief Length of the sequence.
@@ -62,7 +68,7 @@ static inline void *SeqAt(const Seq *seq, int i)
   @param seq [in] sequence.
   @return Sequence length.
   */
-size_t SeqLength(const Seq *seq);
+#define SeqLength(seq) (seq->length)
 
 /**
   @brief Create a new Sequence

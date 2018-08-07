@@ -91,8 +91,6 @@ LogLevel LogLevelFromString(const char *level);
  */
 bool LoggingFormatTimestamp(char dest[64], size_t n, struct tm *timestamp);
 
-LoggingContext *GetCurrentThreadContext(void);
-
 void Log(LogLevel level, const char *fmt, ...) FUNC_ATTR_PRINTF(2, 3);
 void LogDebug(enum LogModule mod, const char *fmt, ...) FUNC_ATTR_PRINTF(2, 3);
 void LogRaw(LogLevel level, const char *prefix, const void *buf, size_t buflen);
@@ -119,7 +117,6 @@ const char *GetErrorStrFromCode(int error_code);
 
 void LogModuleHelp(void);
 bool LogModuleEnabled(enum LogModule mod);
-void LogEnableModule(enum LogModule mod);
 bool LogEnableModulesFromString(char *s);
 
 // byte_magnitude and byte_unit are used to print readable byte counts

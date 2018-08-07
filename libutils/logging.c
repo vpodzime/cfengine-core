@@ -51,7 +51,7 @@ static void LoggingInitializeOnce(void)
     }
 }
 
-LoggingContext *GetCurrentThreadContext(void)
+static inline LoggingContext *GetCurrentThreadContext(void)
 {
     pthread_once(&log_context_init_once, &LoggingInitializeOnce);
     LoggingContext *lctx = pthread_getspecific(log_context_key);
@@ -354,7 +354,7 @@ void Log(LogLevel level, const char *fmt, ...)
 }
 
 
-
+static bool any_module_enabled = false;
 static bool module_is_enabled[LOG_MOD_MAX];
 static const char *log_modules[LOG_MOD_MAX] =
 {
@@ -382,10 +382,11 @@ static enum LogModule LogModuleFromString(const char *s)
     return LOG_MOD_NONE;
 }
 
-void LogEnableModule(enum LogModule mod)
+static void LogEnableModule(enum LogModule mod)
 {
     assert(mod < LOG_MOD_MAX);
 
+    any_module_enabled = true;
     module_is_enabled[mod] = true;
 }
 
@@ -468,14 +469,7 @@ bool LogModuleEnabled(enum LogModule mod)
     assert(mod > LOG_MOD_NONE);
     assert(mod < LOG_MOD_MAX);
 
-    if (module_is_enabled[mod])
-    {
-        return true;
-    }
-    else
-    {
-        return false;
-    }
+    return module_is_enabled[mod];
 }
 
 void LogDebug(enum LogModule mod, const char *fmt, ...)
@@ -485,7 +479,7 @@ void LogDebug(enum LogModule mod, const char *fmt, ...)
     /* Did we forget any entry in log_modules? Should be a static assert. */
     assert(sizeof(log_modules) / sizeof(log_modules[0]) == LOG_MOD_MAX);
 
-    if (LogModuleEnabled(mod))
+    if (any_module_enabled && LogModuleEnabled(mod))
     {
         va_list ap;
         va_start(ap, fmt);

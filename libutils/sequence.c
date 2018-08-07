@@ -321,12 +321,6 @@ void SeqReverse(Seq *seq)
     }
 }
 
-size_t SeqLength(const Seq *seq)
-{
-    assert(seq);
-    return seq->length;
-}
-
 void SeqShuffle(Seq *seq, unsigned int seed)
 {
     if (SeqLength(seq) == 0)
