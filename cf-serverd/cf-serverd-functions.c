@@ -49,6 +49,8 @@
 #include <file_lib.h>
 #include <loading.h>
 #include <printsize.h>
+#include <sys/time.h>
+#include <sys/resource.h>
 
 #define WAIT_INCOMING_TIMEOUT 10
 
@@ -486,6 +488,19 @@ static void CheckFileChanges(EvalContext *ctx, Policy **policy, GenericAgentConf
     }
 }
 
+static void PrintRUsage(int signum)
+{
+    static int ctr = 2;
+    struct rusage usage = {0};
+    if (getrusage(RUSAGE_SELF, &usage) == 0)
+    {
+        if ((ctr % 2) == 0)
+            printf("\n=== %2d ===\n", ctr / 2);
+        printf("user: %3d.%d\n", (int)usage.ru_utime.tv_sec, (int)usage.ru_utime.tv_usec);
+        printf("sys:  %3d.%d\n", (int)usage.ru_stime.tv_sec, (int)usage.ru_stime.tv_usec);
+        ctr++;
+    }
+}
 
 /* Set up standard signal-handling. */
 static void InitSignals()
@@ -496,7 +511,7 @@ static void InitSignals()
     signal(SIGTERM, HandleSignalsForDaemon);
     signal(SIGHUP, HandleSignalsForDaemon);
     signal(SIGPIPE, SIG_IGN);
-    signal(SIGUSR1, HandleSignalsForDaemon);
+    signal(SIGUSR1, PrintRUsage);
     signal(SIGUSR2, HandleSignalsForDaemon);
 }
 
