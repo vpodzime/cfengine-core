@@ -23,6 +23,7 @@
 */
 
 #include <signals.h>
+#include <mutex.h>
 
 static bool PENDING_TERMINATION = false; /* GLOBAL_X */
 
@@ -181,7 +182,7 @@ void HandleSignalsForDaemon(int signum)
         LogSetGlobalLevel(LOG_LEVEL_DEBUG);
         break;
     case SIGUSR2:
-        LogSetGlobalLevel(LOG_LEVEL_NOTICE);
+        DumpLockDiagnostics();
         break;
     case SIGHUP:
         RELOAD_CONFIG = true;

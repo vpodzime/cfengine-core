@@ -30,6 +30,7 @@
 #include <server_transform.h>
 #include <known_dirs.h>
 #include <loading.h>
+#include <mutex.h>
 
 
 static void ThisAgentInit(void)
@@ -80,6 +81,7 @@ int main(int argc, char *argv[])
         GenericAgentFinalize(ctx, config);
         CleanReportBookFilterSet();
     }
+    DumpLockDiagnostics();
 
     return 0;
 }

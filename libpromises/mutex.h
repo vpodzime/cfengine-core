@@ -40,5 +40,6 @@ int __ThreadLock(pthread_mutex_t *name,
                  const char *funcname, const char *filename, int lineno);
 int __ThreadUnlock(pthread_mutex_t *name,
                    const char *funcname, const char *filename, int lineno);
+void DumpLockDiagnostics(void);
 
 #endif

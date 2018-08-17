@@ -42,21 +42,73 @@ pthread_mutex_t *cft_getaddr = &MUTEXES[2]; /* GLOBAL_T */
 pthread_mutex_t *cft_server_children = &MUTEXES[3]; /* GLOBAL_T */
 pthread_mutex_t *cft_server_filter = &MUTEXES[4]; /* GLOBAL_T */
 
+unsigned long cft_lock_cnt            = 0;  /* microseconds */
+unsigned long cft_count_cnt           = 0;
+unsigned long cft_getaddr_cnt         = 0;
+unsigned long cft_server_children_cnt = 0;
+unsigned long cft_server_filter_cnt   = 0;
 
 int __ThreadLock(pthread_mutex_t *mutex,
                  const char *funcname, const char *filename, int lineno)
 
 {
-    int result = pthread_mutex_lock(mutex);
-
-    if (result != 0)
+    int result = pthread_mutex_trylock(mutex);
+    if (result == 0)
     {
-        /* Log() is blocking on mutexes itself inside malloc(), so maybe not
-         * the best idea here. */
-        Log(LOG_LEVEL_ERR,
-            "Locking failure at %s:%d function %s! (pthread_mutex_lock: %s)",
-            filename, lineno, funcname, GetErrorStrFromCode(result));
-        return false;
+        return true;
+    }
+    else
+    {
+        if (result != EBUSY)
+        {
+            /* Log() is blocking on mutexes itself inside malloc(), so maybe not
+             * the best idea here. */
+            Log(LOG_LEVEL_ERR,
+                "Locking failure at %s:%d function %s! (pthread_mutex_lock: %s)",
+                filename, lineno, funcname, GetErrorStrFromCode(result));
+            return false;
+        }
+        else
+        {
+            struct timespec start;
+            struct timespec done;
+            clock_gettime(CLOCK_MONOTONIC_RAW, &start);
+            result = pthread_mutex_lock(mutex);
+            clock_gettime(CLOCK_MONOTONIC_RAW, &done);
+
+            if (result != 0)
+            {
+                Log(LOG_LEVEL_ERR,
+                    "Locking failure at %s:%d function %s! (pthread_mutex_lock: %s)",
+                    filename, lineno, funcname, GetErrorStrFromCode(result));
+                return false;
+            }
+
+            unsigned long diff = (done.tv_sec - start.tv_sec) * 1000000; /* microseconds */
+            long nsec_diff = done.tv_nsec - start.tv_nsec;               /* nanoseconds  */
+            diff += nsec_diff / 1000;                                    /* microseconds */
+
+            if (mutex == cft_lock)
+            {
+                cft_lock_cnt += diff;
+            }
+            else if (mutex == cft_count)
+            {
+                cft_count_cnt += diff;
+            }
+            else if (mutex == cft_getaddr)
+            {
+                cft_getaddr_cnt += diff;
+            }
+            else if (mutex == cft_server_children)
+            {
+                cft_server_children_cnt += diff;
+            }
+            else if (mutex == cft_server_filter)
+            {
+                cft_server_filter_cnt += diff;
+            }
+        }
     }
 
     return true;
@@ -78,4 +130,13 @@ int __ThreadUnlock(pthread_mutex_t *mutex,
     }
 
     return true;
+}
+
+void DumpLockDiagnostics(void)
+{
+    Log(LOG_LEVEL_WARNING, "cft_lock: %lu", cft_lock_cnt);
+    Log(LOG_LEVEL_WARNING, "cft_count: %lu", cft_count_cnt);
+    Log(LOG_LEVEL_WARNING, "cft_getaddr: %lu", cft_getaddr_cnt);
+    Log(LOG_LEVEL_WARNING, "cft_server_children: %lu", cft_server_children_cnt);
+    Log(LOG_LEVEL_WARNING, "cft_server_filter: %lu", cft_server_filter_cnt);
 }
