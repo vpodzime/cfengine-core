@@ -509,7 +509,7 @@ static GenericAgentConfig *CheckOpts(int argc, char **argv)
             break;
 
         case 'n':
-            DONTDO = true;
+            EVAL_MODE = EVAL_MODE_DRY_RUN;
             config->ignore_locks = true;
             break;
 
@@ -1019,7 +1019,7 @@ static void KeepControlPromises(EvalContext *ctx, const Policy *policy, GenericA
 
             if (strcmp(cp->lval, CFA_CONTROLBODY[AGENT_CONTROL_DRYRUN].lval) == 0)
             {
-                DONTDO = BooleanFromString(value);
+                EVAL_MODE = BooleanFromString(value) ? EVAL_MODE_DRY_RUN : EVAL_MODE_NORMAL;
                 Log(LOG_LEVEL_VERBOSE, "Setting dryrun to %c", DONTDO);
                 continue;
             }
