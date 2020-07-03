@@ -603,15 +603,19 @@ void FileChangesCheckAndUpdateDirectory(EvalContext *ctx, const Attributes *attr
             xsnprintf(path, sizeof(path), "%s/%s", name, db_file);
 
             Log(LOG_LEVEL_NOTICE, "File '%s' no longer exists", path);
-            if (FileChangesLogChange(path, FILE_STATE_REMOVED, "File removed", pp))
+            if (MakingInternalChanges(ctx, pp, attr, result,
+                                      "record removal of '%s'", path))
             {
-                RecordChange(ctx, pp, attr, "Removal of '%s' recorded", path);
-                *result = PromiseResultUpdate(*result, PROMISE_RESULT_CHANGE);
-            }
-            else
-            {
-                RecordFailure(ctx, pp, attr, "Failed to record removal of '%s'", path);
-                *result = PromiseResultUpdate(*result, PROMISE_RESULT_FAIL);
+                if (FileChangesLogChange(path, FILE_STATE_REMOVED, "File removed", pp))
+                {
+                    RecordChange(ctx, pp, attr, "Removal of '%s' recorded", path);
+                    *result = PromiseResultUpdate(*result, PROMISE_RESULT_CHANGE);
+                }
+                else
+                {
+                    RecordFailure(ctx, pp, attr, "Failed to record removal of '%s'", path);
+                    *result = PromiseResultUpdate(*result, PROMISE_RESULT_FAIL);
+                }
             }
 
             RemoveAllFileTraces(db, path);
@@ -626,15 +630,19 @@ void FileChangesCheckAndUpdateDirectory(EvalContext *ctx, const Attributes *attr
         }
     }
 
-    if (update && FileChangesSetDirectoryList(db, name, disk_file_set))
+    if (MakingInternalChanges(ctx, pp, attr, result,
+                              "record directory listing for '%s'", name))
     {
-        RecordChange(ctx, pp, attr, "Recorded directory listing for '%s'", name);
-        *result = PromiseResultUpdate(*result, PROMISE_RESULT_CHANGE);
-    }
-    else
-    {
-        RecordChange(ctx, pp, attr, "Failed to record directory listing for '%s'", name);
-        *result = PromiseResultUpdate(*result, PROMISE_RESULT_FAIL);
+        if (update && FileChangesSetDirectoryList(db, name, disk_file_set))
+        {
+            RecordChange(ctx, pp, attr, "Recorded directory listing for '%s'", name);
+            *result = PromiseResultUpdate(*result, PROMISE_RESULT_CHANGE);
+        }
+        else
+        {
+            RecordChange(ctx, pp, attr, "Failed to record directory listing for '%s'", name);
+            *result = PromiseResultUpdate(*result, PROMISE_RESULT_FAIL);
+        }
     }
 
     SeqSoftDestroy(disk_file_set);
