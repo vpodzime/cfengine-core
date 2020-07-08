@@ -595,6 +595,12 @@ static PromiseResult WriteContentFromString(EvalContext *ctx, const char *path, 
     assert(path != NULL);
     assert(attr != NULL);
 
+    const char *changes_path = path;
+    if (ChrootChanges())
+    {
+        changes_path = ToChangesChroot(path);
+    }
+
     PromiseResult result = PROMISE_RESULT_NOOP;
 
     if (attr->content == NULL)
@@ -604,10 +610,10 @@ static PromiseResult WriteContentFromString(EvalContext *ctx, const char *path, 
     }
 
     unsigned char existing_content_digest[EVP_MAX_MD_SIZE + 1] = { 0 };
-    if (access(path, R_OK) == 0)
+    if (access(changes_path, R_OK) == 0)
     {
-        HashFile(path, existing_content_digest, CF_DEFAULT_DIGEST,
-                 FileNewLineMode(path) == NewLineMode_Native);
+        HashFile(changes_path, existing_content_digest, CF_DEFAULT_DIGEST,
+                 FileNewLineMode(changes_path) == NewLineMode_Native);
     }
 
     size_t bytes_to_write = strlen(attr->content);
@@ -624,7 +630,7 @@ static PromiseResult WriteContentFromString(EvalContext *ctx, const char *path, 
             return result;
         }
 
-        FILE *f = safe_fopen(path, "w");
+        FILE *f = safe_fopen(changes_path, "w");
         if (f == NULL)
         {
             RecordFailure(ctx, pp, attr, "Cannot open file '%s' for writing", path);
@@ -736,9 +742,9 @@ static PromiseResult RenderTemplateMustache(EvalContext *ctx, const Promise *pp,
     }
 
     unsigned char existing_output_digest[EVP_MAX_MD_SIZE + 1] = { 0 };
-    if (access(pp->promiser, R_OK) == 0)
+    if (access(edcontext->changes_filename, R_OK) == 0)
     {
-        HashFile(pp->promiser, existing_output_digest, CF_DEFAULT_DIGEST,
+        HashFile(edcontext->changes_filename, existing_output_digest, CF_DEFAULT_DIGEST,
                  edcontext->new_line_mode == NewLineMode_Native);
     }
 
@@ -762,20 +768,20 @@ static PromiseResult RenderTemplateMustache(EvalContext *ctx, const Promise *pp,
         {
             if (MakingChanges(ctx, pp, attr, &result,
                               "update rendering of '%s' from mustache template '%s'",
-                              pp->promiser, message))
+                              edcontext->filename, message))
             {
-                if (SaveAsFile(SaveBufferCallback, output_buffer, edcontext->filename, attr, edcontext->new_line_mode))
+                if (SaveAsFile(SaveBufferCallback, output_buffer, edcontext->changes_filename, attr, edcontext->new_line_mode))
                 {
                     RecordChange(ctx, pp, attr,
                                  "Updated rendering of '%s' from mustache template '%s'",
-                                 pp->promiser, message);
+                                 edcontext->filename, message);
                     result = PromiseResultUpdate(result, PROMISE_RESULT_CHANGE);
                 }
                 else
                 {
                     RecordFailure(ctx, pp, attr,
                                   "Failed to update rendering of '%s' from mustache template '%s'",
-                                  pp->promiser, message);
+                                  edcontext->filename, message);
                     result = PromiseResultUpdate(result, PROMISE_RESULT_FAIL);
                 }
             }
