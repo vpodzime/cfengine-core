@@ -49,6 +49,7 @@ stamp-h1
 /libcfnet/Makefile
 /libenv/Makefile
 /libpromises/Makefile
+/libsliby/Makefile
 /misc/Makefile
 /misc/selinux/Makefile
 /tests/Makefile

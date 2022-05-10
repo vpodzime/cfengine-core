@@ -1847,6 +1847,7 @@ AC_CONFIG_FILES([Makefile
     libcfnet/Makefile
     libenv/Makefile
     libpromises/Makefile
+    libsliby/Makefile
     cf-agent/Makefile
     cf-check/Makefile
     cf-promises/Makefile

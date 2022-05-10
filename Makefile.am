@@ -33,6 +33,7 @@ SUBDIRS = \
 	libenv \
 	cf-check \
 	libpromises \
+	libsliby \
 	cf-agent \
 	cf-execd \
 	cf-key \
